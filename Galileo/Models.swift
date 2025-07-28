@@ -1,5 +1,6 @@
 import Foundation
 import FoundationModels
+import Combine
 
 @Generable
 struct Quiz {
@@ -50,7 +51,7 @@ struct ConceptExplanation {
 @MainActor
 class EducationService: ObservableObject {
     private let session: LanguageModelSession
-    
+
     init() {
         let instructions = Instructions("""
         You are Galileo, a brilliant educator and scientist. Your role is to make complex concepts accessible and engaging for students.
@@ -68,51 +69,55 @@ class EducationService: ObservableObject {
     }
     
     func explainConcept(topic: String) async throws -> ConceptExplanation {
-        let prompt = Prompt("""
-        Explain the scientific concept "\(topic)" in simple terms suitable for students. 
-        Provide key terms, a real-world example, and rate the difficulty level (Beginner/Intermediate/Advanced).
-        Focus on making complex ideas accessible and engaging.
+        let response = try await session.respond(
+            to: """
+            Explain the scientific concept "\(topic)" in simple terms suitable for students. 
+            Provide key terms, a real-world example, and rate the difficulty level (Beginner/Intermediate/Advanced).
+            Focus on making complex ideas accessible and engaging.
+            """,
+            generating: ConceptExplanation.self
+        )
         
-        Respond in this exact structure using guided generation.
-        """)
-        
-        return try await session.respond(to: prompt, with: ConceptExplanation.self)
+        return response.content
     }
     
     func generateQuiz(topic: String, questionCount: Int = 5) async throws -> Quiz {
-        let prompt = Prompt("""
-        Create a \(questionCount)-question multiple choice quiz about "\(topic)".
-        Each question should have exactly 4 options with one correct answer (index 0-3).
-        Include educational explanations for the correct answers.
-        Make questions appropriately challenging but fair.
+        let response = try await session.respond(
+            to: """
+            Create a \(questionCount)-question multiple choice quiz about "\(topic)".
+            Each question should have exactly 4 options with one correct answer (index 0-3).
+            Include educational explanations for the correct answers.
+            Make questions appropriately challenging but fair.
+            """,
+            generating: Quiz.self
+        )
         
-        Use guided generation to respond in the exact Quiz structure.
-        """)
-        
-        return try await session.respond(to: prompt, with: Quiz.self)
+        return response.content
     }
     
     func createFlashcards(content: String, cardCount: Int = 10) async throws -> FlashcardSet {
-        let prompt = Prompt("""
-        Create \(cardCount) flashcards from this content: "\(content)"
-        Each flashcard should have a clear question/term on the front and a concise answer/definition on the back.
-        Organize cards by logical categories and focus on the most important concepts.
+        let response = try await session.respond(
+            to: """
+            Create \(cardCount) flashcards from this content: "\(content)"
+            Each flashcard should have a clear question/term on the front and a concise answer/definition on the back.
+            Organize cards by logical categories and focus on the most important concepts.
+            """,
+            generating: FlashcardSet.self
+        )
         
-        Respond using guided generation with the FlashcardSet structure.
-        """)
-        
-        return try await session.respond(to: prompt, with: FlashcardSet.self)
+        return response.content
     }
     
     func summarizeNotes(text: String) async throws -> StudyNotes {
-        let prompt = Prompt("""
-        Summarize this study material into key points: "\(text)"
-        Extract the most important concepts and create a concise summary.
-        Organize information in a student-friendly format with clear key points and important concepts.
+        let response = try await session.respond(
+            to: """
+            Summarize this study material into key points: "\(text)"
+            Extract the most important concepts and create a concise summary.
+            Organize information in a student-friendly format with clear key points and important concepts.
+            """,
+            generating: StudyNotes.self
+        )
         
-        Use guided generation to respond in the StudyNotes structure.
-        """)
-        
-        return try await session.respond(to: prompt, with: StudyNotes.self)
+        return response.content
     }
 }
